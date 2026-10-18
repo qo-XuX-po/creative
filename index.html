@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校園易市 CampusBazaar - 大專院校二手物資與租屋家具地緣媒合平台</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans TC', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="fixed top-20 right-5 z-50 transform translate-x-full transition-transform duration-300 ease-in-out bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toast-msg" class="text-sm font-medium">提示訊息</span>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-100 shadow-sm transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <!-- Brand Logo -->
+            <a href="#" onclick="switchTab('home')" class="flex items-center gap-2.5 group">
+                <div class="w-10 h-10 bg-gradient-to-tr from-emerald-600 to-teal-500 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+                    易
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-extrabold text-lg text-slate-900 tracking-tight">校園易市</span>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                            <i class="fa-solid fa-shield-halved mr-1 text-emerald-600"></i>.edu 認證
+                        </span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 tracking-wider font-semibold uppercase -mt-0.5">CampusBazaar</p>
+                </div>
+            </a>
+
+            <!-- Search Bar (Desktop) -->
+            <div class="hidden md:flex flex-1 max-w-md relative">
+                <input type="text" id="desktop-search" oninput="filterItems()" placeholder="搜尋二手課本、租屋家具、電器或科系..." 
+                    class="w-full bg-slate-100/80 text-sm text-slate-800 rounded-full py-2.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:bg-white border border-transparent focus:border-emerald-500 transition-all">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+            </div>
+
+            <!-- Right Actions -->
+            <div class="flex items-center gap-3">
+                <button onclick="openPostModal()" class="hidden sm:flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-4 py-2.5 rounded-full shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all active:scale-95">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>免費刊登物資</span>
+                </button>
+                <button onclick="openChatModal()" class="p-2.5 text-slate-600 hover:bg-slate-100 rounded-full relative transition-colors" title="私訊訊息">
+                    <i class="fa-regular fa-paper-plane text-lg"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+                </button>
+                <button onclick="toggleUserStatus()" id="user-btn" class="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-700 transition-all border border-slate-200">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" class="w-6 h-6 rounded-full object-cover">
+                    <span class="hidden md:inline" id="user-name">淡江資管 學生</span>
+                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Bar (Mobile) -->
+        <div class="px-4 pb-3 md:hidden">
+            <div class="relative">
+                <input type="text" id="mobile-search" oninput="filterItems()" placeholder="搜尋二手課本、租屋家具、電器..." 
+                    class="w-full bg-slate-100 text-xs text-slate-800 rounded-full py-2 pl-9 pr-4 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Hero Banner -->
+    <section class="bg-gradient-to-r from-emerald-800 via-teal-700 to-slate-900 text-white py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+            <div class="space-y-4 text-center md:text-left max-w-2xl">
+                <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/20 text-emerald-200">
+                    <i class="fa-solid fa-graduation-cap"></i> 大專院校專屬校園二手物資交流網
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
+                    別再給電商賺運費！<br><span class="text-emerald-400">同校面交零運費</span>，最安心。
+                </h1>
+                <p class="text-slate-200 text-sm sm:text-base leading-relaxed">
+                    強制使用 <span class="text-emerald-300 font-semibold">.edu 校園信箱實名認證</span>，杜絕詐騙假帳號。專為大型家具、租屋電器與指定科系專業課本打造的地緣媒合平台。
+                </p>
+                <div class="pt-2 flex flex-wrap gap-3 justify-center md:justify-start text-xs font-semibold">
+                    <div class="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/10">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i> 校內指定面交點
+                    </div>
+                    <div class="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/10">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i> 賣家零手續費抽成
+                    </div>
+                    <div class="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/10">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i> 條理化科系分類
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Counter Card -->
+            <div class="bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 text-center flex gap-6 sm:gap-8 shadow-2xl">
+                <div class="space-y-1">
+                    <p class="text-3xl font-black text-emerald-300">1,280+</p>
+                    <p class="text-[11px] text-slate-300 font-medium">淡江大學 實名用戶</p>
+                </div>
+                <div class="w-px bg-white/20"></div>
+                <div class="space-y-1">
+                    <p class="text-3xl font-black text-emerald-300">3,450+</p>
+                    <p class="text-[11px] text-slate-300 font-medium">已成功媒合件數</p>
+                </div>
+                <div class="w-px bg-white/20"></div>
+                <div class="space-y-1">
+                    <p class="text-3xl font-black text-emerald-300">$0</p>
+                    <p class="text-[11px] text-slate-300 font-medium">買賣物流運費</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+
+        <!-- Category Filters -->
+        <section class="space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-emerald-600"></i> 物資探索分類
+                </h2>
+                <span class="text-xs font-semibold text-slate-400">點擊切換類別</span>
+            </div>
+            
+            <div class="flex items-center gap-2.5 overflow-x-auto pb-2 custom-scrollbar text-xs font-medium">
+                <button onclick="setCategory('all')" id="cat-all" class="cat-btn active bg-emerald-600 text-white px-4 py-2.5 rounded-2xl whitespace-nowrap shadow-sm shadow-emerald-600/30 font-semibold transition-all">
+                    ✨ 全部物資
+                </button>
+                <button onclick="setCategory('textbook')" id="cat-textbook" class="cat-btn bg-white hover:bg-slate-100 text-slate-700 px-4 py-2.5 rounded-2xl whitespace-nowrap border border-slate-200 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-book text-blue-500"></i> 指定科系課本
+                </button>
+                <button onclick="setCategory('furniture')" id="cat-furniture" class="cat-btn bg-white hover:bg-slate-100 text-slate-700 px-4 py-2.5 rounded-2xl whitespace-nowrap border border-slate-200 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-couch text-amber-500"></i> 租屋家具物資
+                </button>
+                <button onclick="setCategory('appliance')" id="cat-appliance" class="cat-btn bg-white hover:bg-slate-100 text-slate-700 px-4 py-2.5 rounded-2xl whitespace-nowrap border border-slate-200 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-plug text-purple-500"></i> 生活家電
+                </button>
+                <button onclick="setCategory('digital')" id="cat-digital" class="cat-btn bg-white hover:bg-slate-100 text-slate-700 px-4 py-2.5 rounded-2xl whitespace-nowrap border border-slate-200 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-laptop text-rose-500"></i> 3C 數位周邊
+                </button>
+            </div>
+        </section>
+
+        <!-- Product Grid -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center gap-2">
+                    <h2 class="font-extrabold text-slate-900 text-xl">熱門上架項目</h2>
+                    <span id="item-count" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full">共 6 件物資</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs font-medium text-slate-500">
+                    <span>排序方式：</span>
+                    <select onchange="filterItems()" id="sort-select" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                        <option value="newest">最新上架優先</option>
+                        <option value="price-low">價格由低到高</option>
+                        <option value="urgent">急售項目優先</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Items Container -->
+            <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                <!-- Dynamically rendered via Javascript -->
+            </div>
+        </section>
+
+        <!-- Trust Features Banner -->
+        <section class="bg-slate-900 text-white rounded-3xl p-8 shadow-xl grid grid-cols-1 md:grid-cols-3 gap-6 relative overflow-hidden">
+            <div class="space-y-2 border-b md:border-b-0 md:border-r border-slate-800 pb-4 md:pb-0 md:pr-4">
+                <div class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-lg font-bold mb-3">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <h3 class="font-bold text-base text-white">.edu 實名認證防詐</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">強制註冊時驗證大專院校信箱，徹底杜絕外部假帳號、詐騙集團與機器人洗版。</p>
+            </div>
+            <div class="space-y-2 border-b md:border-b-0 md:border-r border-slate-800 pb-4 md:pb-0 md:pr-4">
+                <div class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-lg font-bold mb-3">
+                    <i class="fa-solid fa-truck-ramp-box"></i>
+                </div>
+                <h3 class="font-bold text-base text-white">大型物資零運費</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">不必支付蝦皮等傳統電商動輒 $200~$500 元的高昂宅配運費，直接在校內約定面交。</p>
+            </div>
+            <div class="space-y-2">
+                <div class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-lg font-bold mb-3">
+                    <i class="fa-solid fa-comments"></i>
+                </div>
+                <h3 class="font-bold text-base text-white">校內安全面交保障</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">推薦於圖書館前、宿舍大廳等校園公開公共區域當面檢查商品與付款，交易無後顧之憂。</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-black text-xs">易</div>
+                <span class="font-bold text-slate-800">校園易市 CampusBazaar</span>
+                <span>© 115 學年度 創新與創業課程 創業計畫專案 (第四組：智慧的三分之一)</span>
+            </div>
+            <div class="flex items-center gap-4 text-slate-400">
+                <a href="#" class="hover:text-emerald-600">教育部 .edu 驗證規範</a>
+                <span>•</span>
+                <a href="#" class="hover:text-emerald-600">校園面交安全守則</a>
+                <span>•</span>
+                <a href="#" class="hover:text-emerald-600">服務條款與隱私權</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile Sticky Floating Action Button -->
+    <div class="fixed bottom-6 right-6 sm:hidden z-30">
+        <button onclick="openPostModal()" class="w-14 h-14 bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center text-xl font-bold border-4 border-white active:scale-95 transition-transform">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    </div>
+
+    <!-- Product Detail Modal -->
+    <div id="detail-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl transform transition-all max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <span id="modal-cat-tag" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">類別</span>
+                    <span id="modal-verified" class="text-xs text-slate-500 font-medium"><i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i>賣家已完成 .edu 驗證</span>
+                </div>
+                <button onclick="closeDetailModal()" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content (Scrollable) -->
+            <div class="p-6 overflow-y-auto custom-scrollbar space-y-6 flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="relative h-64 bg-slate-100 rounded-2xl overflow-hidden border border-slate-100">
+                        <img id="modal-img" src="" class="w-full h-full object-cover">
+                        <span id="modal-urgent-badge" class="absolute top-3 left-3 bg-rose-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md hidden">急售清庫存</span>
+                    </div>
+                    <div class="space-y-4 flex flex-col justify-between">
+                        <div>
+                            <h3 id="modal-title" class="font-extrabold text-slate-900 text-xl leading-snug">商品名稱</h3>
+                            <div class="mt-3 flex items-baseline gap-2">
+                                <span id="modal-price" class="text-2xl font-black text-emerald-600">NT$ 0</span>
+                                <span id="modal-orig-price" class="text-xs text-slate-400 line-through">原價</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-3.5 rounded-2xl space-y-2 text-xs border border-slate-100">
+                            <div class="flex items-center justify-between text-slate-600">
+                                <span><i class="fa-solid fa-location-dot text-emerald-600 mr-1.5"></i>建議面交地點：</span>
+                                <span id="modal-location" class="font-bold text-slate-800">面交地點</span>
+                            </div>
+                            <div class="flex items-center justify-between text-slate-600">
+                                <span><i class="fa-solid fa-clock text-emerald-600 mr-1.5"></i>上架時間：</span>
+                                <span id="modal-time" class="font-semibold text-slate-700">時間</span>
+                            </div>
+                            <div class="flex items-center justify-between text-slate-600">
+                                <span><i class="fa-solid fa-box text-emerald-600 mr-1.5"></i>物況說明：</span>
+                                <span id="modal-condition" class="font-semibold text-emerald-700">9成新</span>
+                            </div>
+                        </div>
+
+                        <!-- Seller Info -->
+                        <div class="flex items-center justify-between border-t border-slate-100 pt-3">
+                            <div class="flex items-center gap-2.5">
+                                <img id="modal-seller-avatar" src="" class="w-9 h-9 rounded-full object-cover border border-slate-200">
+                                <div>
+                                    <p id="modal-seller-name" class="font-bold text-xs text-slate-800">賣家名稱</p>
+                                    <p class="text-[10px] text-emerald-600 font-medium">淡江大學 正規學生</p>
+                                </div>
+                            </div>
+                            <span class="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-1 rounded-md">滿分評價 ★ 5.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="space-y-2">
+                    <h4 class="font-bold text-sm text-slate-900">詳細說明</h4>
+                    <p id="modal-desc" class="text-xs text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        商品描述...
+                    </p>
+                </div>
+            </div>
+
+            <!-- Modal Footer Action -->
+            <div class="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
+                <button onclick="startPrivateChat()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 text-sm active:scale-95">
+                    <i class="fa-regular fa-paper-plane"></i>
+                    <span>私訊學長姐 (約定校內面交)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post Item Modal (Simulation) -->
+    <div id="post-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-emerald-600"></i> 免費刊登校園二手物資
+                </h3>
+                <button onclick="closePostModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form onsubmit="handlePostSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">物品標題</label>
+                    <input type="text" required placeholder="例如：Java 程式設計課本、IKEA 電腦椅" class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">物資類別</label>
+                        <select class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                            <option value="textbook">指定科系課本</option>
+                            <option value="furniture">租屋家具物資</option>
+                            <option value="appliance">生活家電</option>
+                            <option value="digital">3C 數位周邊</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">預售價格 (NT$)</label>
+                        <input type="number" required placeholder="例如：250" class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">建議面交地點 (校內)</label>
+                    <input type="text" required placeholder="例如：淡江圖書館前、水源街門口" class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">詳細描述與物況</label>
+                    <textarea rows="3" placeholder="註明使用程度、缺頁狀況或是否需自備工具搬運..." class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-none focus:ring-1 focus:ring-emerald-500"></textarea>
+                </div>
+                <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-emerald-800 text-[11px] leading-relaxed">
+                    <i class="fa-solid fa-circle-info mr-1"></i> 您正使用 <span class="font-bold text-emerald-900">淡江大學 .edu 信箱</span> 帳號登入，刊登後將自動獲得「實名防詐標章」。
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-md transition-all">
+                    立即免費發布上架
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Private Chat Simulated Drawer -->
+    <div id="chat-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full h-[500px] shadow-2xl flex flex-col overflow-hidden">
+            <div class="p-4 bg-emerald-600 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 bg-emerald-300 rounded-full animate-pulse"></div>
+                    <span id="chat-target-name" class="font-bold text-sm">與淡江學長姐即時私訊</span>
+                </div>
+                <button onclick="closeChatModal()" class="text-emerald-100 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs custom-scrollbar bg-slate-50">
+                <div class="text-center text-[10px] text-slate-400 my-2">已啟用 .edu 信箱安全實名保護</div>
+                <div class="flex gap-2">
+                    <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm border border-slate-200 max-w-[80%] text-slate-700">
+                        同學你好！請問這本課本還有嗎？我想約今天下午在淡江圖書館前當面交貨！
+                    </div>
+                </div>
+            </div>
+            <div class="p-3 bg-white border-t border-slate-100 flex gap-2">
+                <input type="text" id="chat-input" placeholder="輸入訊息約定校內面交地點與時間..." class="flex-1 border border-slate-200 rounded-full px-4 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                <button onclick="sendChatMessage()" class="bg-emerald-600 hover:bg-emerald-700 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Javascript Data & Logic -->
+    <script>
+        // Mock Products Data (Reflecting user's project)
+        const products = [
+            {
+                id: 1,
+                title: "Java 程式設計觀念經典 (資管系大一必修)",
+                category: "textbook",
+                catLabel: "指定科系課本",
+                price: 250,
+                origPrice: 850,
+                urgent: true,
+                location: "淡江圖書館前面交",
+                time: "10 分鐘前上架",
+                condition: "9成新 (無劃記)",
+                sellerName: "劉學長 (資管三A)",
+                sellerAvatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=100&q=80",
+                img: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
+                desc: "淡江資管系大一程式設計指定用書！內頁乾淨無劃記，保存極佳。當初全新購入 850 元，期末考完低價轉讓給學弟妹，省荷包首選！"
+            },
+            {
+                id: 2,
+                title: "IKEA 人體工學人體椅 (畢業離校出清)",
+                category: "furniture",
+                catLabel: "租屋家具物資",
+                price: 400,
+                origPrice: 1800,
+                urgent: true,
+                location: "淡水水源街自取",
+                time: "25 分鐘前上架",
+                condition: "8成新",
+                sellerName: "江學姊 (大四離校生)",
+                sellerAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80",
+                img: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=600&q=80",
+                desc: "畢業退租出清！扶手跟靠背功能完全正常，坐起來很舒服。因為體積較大蝦皮運費要 $350 不划算，直接在水源街租屋處自取者優先！"
+            },
+            {
+                id: 3,
+                title: "聲寶小容量單門冰箱 (適合租屋套房)",
+                category: "appliance",
+                catLabel: "生活家電",
+                price: 1200,
+                origPrice: 4500,
+                urgent: false,
+                location: "大學城面交 / 代搬",
+                time: "1 小時前上架",
+                condition: "85成新",
+                sellerName: "張同學 (企管四B)",
+                sellerAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
+                img: "https://images.unsplash.com/photo-1584992236310-6edddc08acff?auto=format&fit=crop&w=600&q=80",
+                desc: "功能完全正常，冷房效果很好，製冰盒也很乾淨。租屋必備省電款！畢業帶不走故折價出清。"
+            },
+            {
+                id: 4,
+                title: "Logitech 無線鍵盤滑鼠組 (含接收器)",
+                category: "digital",
+                catLabel: "3C 數位周邊",
+                price: 300,
+                origPrice: 790,
+                urgent: false,
+                location: "商管大樓前",
+                time: "2 小時前上架",
+                condition: "95成新",
+                sellerName: "陳同學 (資工二)",
+                sellerAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80",
+                img: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80",
+                desc: "買了做備用結果幾乎沒用到，按鍵反饋很好，附贈全新電池一對，歡迎商管大樓或圖書館當面測試！"
+            },
+            {
+                id: 5,
+                title: "微積分重點觀念講義與解答本",
+                category: "textbook",
+                catLabel: "指定科系課本",
+                price: 150,
+                origPrice: 500,
+                urgent: false,
+                location: "宮燈教室前",
+                time: "3 小時前上架",
+                condition: "7成新 (附考古題筆記)",
+                sellerName: "王學長 (數研所)",
+                sellerAvatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80",
+                img: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=600&q=80",
+                desc: "內含淡江歷年微積分段考高分考古題整理與詳細算式筆記！大一想一次 pass 微積分必備寶典。"
+            },
+            {
+                id: 6,
+                title: "三層可拆式木質置物收納架",
+                category: "furniture",
+                catLabel: "租屋家具物資",
+                price: 180,
+                origPrice: 590,
+                urgent: true,
+                location: "宿舍松濤館前",
+                time: "5 小時前上架",
+                condition: "9成新",
+                sellerName: "黃同學 (英文二)",
+                sellerAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&q=80",
+                img: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?auto=format&fit=crop&w=600&q=80",
+                desc: "放在宿舍放保養品跟課本非常方便，木頭無發霉狀況，可拆卸好載走！松濤館門口隨時可面交。"
+            }
+        ];
+
+        let currentCategory = 'all';
+        let activeProduct = null;
+
+        // Render Items to Grid
+        function renderItems(itemsToRender) {
+            const grid = document.getElementById('product-grid');
+            document.getElementById('item-count').innerText = `共 ${itemsToRender.length} 件物資`;
+
+            if (itemsToRender.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-400 space-y-3">
+                        <i class="fa-solid fa-box-open text-4xl text-slate-300"></i>
+                        <p class="text-sm">沒有找到符合條件的校園二手物資</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = itemsToRender.map(item => `
+                <div onclick="openDetailModal(${item.id})" class="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group cursor-pointer hover:-translate-y-1">
+                    <div>
+                        <div class="relative h-44 bg-slate-100 overflow-hidden">
+                            <img src="${item.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="${item.title}">
+                            ${item.urgent ? `<span class="absolute top-2.5 left-2.5 bg-rose-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-md">急售清庫存</span>` : ''}
+                            <span class="absolute bottom-2.5 right-2.5 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
+                                <i class="fa-solid fa-location-dot text-emerald-400"></i>${item.location}
+                            </span>
+                        </div>
+                        <div class="p-4 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50">${item.catLabel}</span>
+                                <span class="text-[10px] text-slate-400 font-medium">${item.time}</span>
+                            </div>
+                            <h3 class="font-bold text-sm text-slate-800 group-hover:text-emerald-600 transition-colors line-clamp-2 leading-snug">${item.title}</h3>
+                        </div>
+                    </div>
+                    <div class="px-4 pb-4 pt-1 flex items-end justify-between border-t border-slate-50 mt-2">
+                        <div>
+                            <span class="text-base font-black text-emerald-600">NT$ ${item.price}</span>
+                            <span class="text-[10px] text-slate-400 line-through ml-1">$${item.origPrice}</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">校內 0 運費</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Category Filter
+        function setCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-600', 'text-white', 'shadow-sm');
+                btn.classList.add('bg-white', 'text-slate-700');
+            });
+            const activeBtn = document.getElementById(`cat-${cat}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-white', 'text-slate-700');
+                activeBtn.classList.add('bg-emerald-600', 'text-white', 'shadow-sm');
+            }
+            filterItems();
+        }
+
+        // Search & Filter combined
+        function filterItems() {
+            const query = (document.getElementById('desktop-search').value || document.getElementById('mobile-search').value).toLowerCase();
+            const sort = document.getElementById('sort-select').value;
+
+            let filtered = products.filter(p => {
+                const matchesCat = currentCategory === 'all' || p.category === currentCategory;
+                const matchesQuery = p.title.toLowerCase().includes(query) || p.desc.toLowerCase().includes(query) || p.catLabel.toLowerCase().includes(query);
+                return matchesCat && matchesQuery;
+            });
+
+            if (sort === 'price-low') {
+                filtered.sort((a, b) => a.price - b.price);
+            } else if (sort === 'urgent') {
+                filtered.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0));
+            }
+
+            renderItems(filtered);
+        }
+
+        // Product Modal Logic
+        function openDetailModal(id) {
+            activeProduct = products.find(p => p.id === id);
+            if (!activeProduct) return;
+
+            document.getElementById('modal-title').innerText = activeProduct.title;
+            document.getElementById('modal-cat-tag').innerText = activeProduct.catLabel;
+            document.getElementById('modal-price').innerText = `NT$ ${activeProduct.price}`;
+            document.getElementById('modal-orig-price').innerText = `原價 $${activeProduct.origPrice}`;
+            document.getElementById('modal-location').innerText = activeProduct.location;
+            document.getElementById('modal-time').innerText = activeProduct.time;
+            document.getElementById('modal-condition').innerText = activeProduct.condition;
+            document.getElementById('modal-seller-name').innerText = activeProduct.sellerName;
+            document.getElementById('modal-seller-avatar').src = activeProduct.sellerAvatar;
+            document.getElementById('modal-desc').innerText = activeProduct.desc;
+            document.getElementById('modal-img').src = activeProduct.img;
+
+            const urgentBadge = document.getElementById('modal-urgent-badge');
+            if (activeProduct.urgent) urgentBadge.classList.remove('hidden');
+            else urgentBadge.classList.add('hidden');
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        }
+
+        // Post Modal Logic
+        function openPostModal() {
+            document.getElementById('post-modal').classList.remove('hidden');
+        }
+
+        function closePostModal() {
+            document.getElementById('post-modal').classList.add('hidden');
+        }
+
+        function handlePostSubmit(e) {
+            e.preventDefault();
+            closePostModal();
+            showToast("成功上架！已自動綁定淡江 .edu 信箱認證標章。");
+        }
+
+        // Private Chat Modal
+        function startPrivateChat() {
+            closeDetailModal();
+            if (activeProduct) {
+                document.getElementById('chat-target-name').innerText = `與 ${activeProduct.sellerName} 約定面交`;
+            }
+            document.getElementById('chat-modal').classList.remove('hidden');
+        }
+
+        function openChatModal() {
+            document.getElementById('chat-modal').classList.remove('hidden');
+        }
+
+        function closeChatModal() {
+            document.getElementById('chat-modal').classList.add('hidden');
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const val = input.value.trim();
+            if (!val) return;
+
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `
+                <div class="flex gap-2 justify-end">
+                    <div class="bg-emerald-600 text-white p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[80%]">
+                        ${val}
+                    </div>
+                </div>
+            `;
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+
+            // Auto reply simulation
+            setTimeout(() => {
+                box.innerHTML += `
+                    <div class="flex gap-2">
+                        <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm border border-slate-200 max-w-[80%] text-slate-700">
+                            沒問題！那我們今天下午 4:30 在淡江圖書館正門口見面當面檢查驗收喔！
+                        </div>
+                    </div>
+                `;
+                box.scrollTop = box.scrollHeight;
+            }, 1000);
+        }
+
+        // Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        function toggleUserStatus() {
+            showToast("已登入淡江資管學生帳號 (已通過 .edu 信箱驗證)");
+        }
+
+        // Initial Page Load
+        window.onload = function() {
+            renderItems(products);
+        };
+    </script>
+</body>
+</html>
